@@ -1,0 +1,30 @@
+{
+  "version": "g1-2026-10-22",
+  "nota": "PRE-REGISTRO de las reglas G (GMGN + X + lanzamientos), escrito el 22-oct-2026 ~17:00 UTC ANTES de recoger ninguna señal. No se edita: una idea nueva o un umbral nuevo = archivo rules_g2.json con otra 'version'. Encargo de Jan: (1) copiar a los que saben, (2) monitorizar X y extraer el anuncio/revuelo antes de que sea moneda, (3) snipear las oficiales de marcas/sitios. Hipótesis nula de todas: no rinden más que un token nuevo al azar neto de peaje.",
+  "cadena": "sol",
+  "costes": {
+    "size_usd": 25,
+    "fee": 0.01,
+    "fixed_usd_per_leg": 0.35,
+    "slip_base": 0.01,
+    "nota": "Peaje GMGN: 1 % por pata + priority 0,002 SOL + tip 0,0001 SOL por pata (~0,35 $ a 160 $/SOL) + impacto constant-product sobre liq/2 + 1 % slippage base. Misma fórmula net_return de memebank."
+  },
+  "marcas_s": [300, 900, 3600, 21600, 86400],
+  "criterio_primario": {"entrada": "precio DexScreener en el momento de la señal (lag de sondeo guardado en meta.lag_s)", "salida_s": 900, "metrica": "retorno neto mediano y % > 0 frente al control U de la misma hora"},
+  "n_minimo_veredicto": 30,
+  "control": {"rule": "U", "como": "por cada señal G se toma un token de trenches new_creation creado en la misma ventana de 10 min, no señalado por ninguna G; mismas marcas y costes"},
+  "reglas": {
+    "G1": {"idea": "copiar a los que saben (KOL)", "fuente": "gmgn kol feed", "disparo": "side=buy, amount_usd>=50, token con <24 h desde creation_timestamp, maker con tag kol y sin tag wash_trader; 1 señal por (maker, mint); máx 60/h"},
+    "G1b": {"idea": "copiar a smart money", "fuente": "gmgn smartmoney feed", "disparo": "side=buy, amount_usd>=100, token <24 h; 1 por (maker, mint); máx 60/h"},
+    "G1c": {"idea": "¿cuánto tarda GMGN frente a nuestro WS Helius?", "fuente": "gmgn kol feed", "disparo": "compra de uno de los traders de memebank/bot.json fase_b.traders; guarda lag_s = ts_detect - timestamp de la tx; no es una regla de compra, es una medida de latencia"},
+    "G2": {"idea": "monitorizar X: una cuenta vigilada publica un CA", "fuente": "x_fx | opentwitter", "disparo": "post propio (no RT, no respuesta) de un handle de config/x_handles.txt con un CA base58 32-44 que tenga par en DexScreener en <=5 min; 1 por (handle, mint)"},
+    "G3": {"idea": "X -> moneda: el revuelo precede al token", "fuente": "x_fx | opentwitter + pumpportal", "disparo": "un término (palabra >=4 letras en mayúscula inicial o $TICKER) dicho por >=2 handles vigilados en 15 min, y un token pump.fun cuyo symbol o name lo contiene creado en [-30, +30] min; señal en el instante del lanzamiento o del 2º post (el más tardío); 1 por mint"},
+    "G4": {"idea": "snipear la moneda OFICIAL de una marca/sitio", "fuente": "pumpportal + gmgn token_info/trenches + x", "disparo": "token nuevo cuyo twitter de metadatos (IPFS) o link.twitter_username de GMGN es exactamente el handle de una marca de config/marcas.txt, O cuyo CA lo publica ese handle (G2 con handle en marcas), O token_signal tipo 11 (Cto) / 18 (PumpClaims) con twitter coincidente; 1 por mint; meta.grado = fuerte (CA publicado por la marca) | medio (metadatos apuntan a la marca) | gmgn_signal"},
+    "G5_20": {"idea": "¿paga la señal KOLBuy de GMGN?", "fuente": "gmgn token_signal", "disparo": "signal_type 20; 1 por mint; mc entre 5k y 2M"},
+    "G5_12": {"idea": "¿paga SmartDegenBuy?", "fuente": "gmgn token_signal", "disparo": "signal_type 12; 1 por mint"},
+    "G5_19": {"idea": "¿paga PlatformCallV2?", "fuente": "gmgn token_signal", "disparo": "signal_type 19; 1 por mint"},
+    "G5_5": {"idea": "¿paga DexBoost (promo pagada)?", "fuente": "gmgn token_signal | dexscreener boosts", "disparo": "signal_type 5 o boost de DexScreener; 1 por mint"},
+    "G6": {"idea": "llamadas públicas de KOL con historial", "fuente": "gmgn callout global only_kol", "disparo": "callout con win_rate_7d>=0.5 (o campo equivalente de acierto 7d) y holding_usd>=200; 1 por (call_wallet, mint)"}
+  },
+  "no_se_hace": ["comprar nada", "tocar memebank.db", "editar este archivo", "usar la key demo para más de 1 req/5 s por feed"]
+}
